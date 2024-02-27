@@ -51,8 +51,8 @@
 #include "IOWrapper/Pangolin/PangolinDSOViewer.h"
 #include "IOWrapper/OutputWrapper/SampleOutputWrapper.h"
 
-#include <opencv/cv.hpp>
-#include <opencv/highgui.h>
+// #include <opencv/cv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 
 std::string vignette = "";
@@ -495,7 +495,7 @@ int main( int argc, char** argv )
             // if MODE_SLAM is true, it runs slam.
             bool MODE_SLAM = true;
             // if MODE_STEREOMATCH is true, it does stereo matching and output idepth image.
-            bool MODE_STEREOMATCH = false;
+            bool MODE_STEREOMATCH = true;
 
             if(MODE_SLAM)
             {
