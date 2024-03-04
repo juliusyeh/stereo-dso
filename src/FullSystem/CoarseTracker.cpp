@@ -758,7 +758,8 @@ bool CoarseTracker::trackNewestCoarse(
 		SE3 &lastToNew_out, AffLight &aff_g2l_out,
 		int coarsestLvl,
 		Vec5 minResForAbort,
-		IOWrap::Output3DWrapper* wrap)
+		IOWrap::Output3DWrapper* wrap,
+		bool fix_traj)
 {
 	debugPlot = setting_render_displayCoarseTrackingFull;
 	debugPrint = false;
@@ -847,8 +848,8 @@ bool CoarseTracker::trackNewestCoarse(
 			inc *= extrapFac;
 
 			Vec8 incScaled = inc;
-			incScaled.segment<3>(0) *= SCALE_XI_ROT;
-			incScaled.segment<3>(3) *= SCALE_XI_TRANS;
+			incScaled.segment<3>(0) *= (fix_traj)? 0.0 : SCALE_XI_ROT;
+			incScaled.segment<3>(3) *= (fix_traj)? 0.0 : SCALE_XI_TRANS;
 			incScaled.segment<1>(6) *= SCALE_A;
 			incScaled.segment<1>(7) *= SCALE_B;
 

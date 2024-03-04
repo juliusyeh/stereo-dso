@@ -69,7 +69,7 @@ public:
 	// ==================== Output3DWrapper Functionality ======================
 	virtual void publishGraph(const std::map<long,Eigen::Vector2i> &connectivity);
     virtual void publishKeyframes( std::vector<FrameHessian*> &frames, bool final, CalibHessian* HCalib);
-    virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib);
+    virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib, bool pre_calc_pose=false);
 
 
 	virtual void pushLiveFrame(FrameHessian* image);
@@ -106,7 +106,9 @@ private:
 	boost::mutex model3DMutex;
 	KeyFrameDisplay* currentCam;
 	std::vector<KeyFrameDisplay*> keyframes;
+	std::vector<SE3,Eigen::aligned_allocator<SE3>> allFrameSE3;
 	std::vector<Vec3f,Eigen::aligned_allocator<Vec3f>> allFramePoses;
+	std::vector<Vec3f,Eigen::aligned_allocator<Vec3f>> allFramePreCalcPoses;
 	std::map<int, KeyFrameDisplay*> keyframesByKFID;
 	std::vector<GraphConnection,Eigen::aligned_allocator<GraphConnection>> connections;
 
@@ -119,6 +121,7 @@ private:
 	bool settings_showFullTrajectory;
 	bool settings_showActiveConstraints;
 	bool settings_showAllConstraints;
+	bool settings_showPreCalcTrajectory;
 
 	float settings_scaledVarTH;
 	float settings_absVarTH;

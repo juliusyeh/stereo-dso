@@ -143,6 +143,7 @@ void PangolinDSOViewer::run()
 	pangolin::Var<bool> settings_showFullTrajectory("ui.FullTrajectory",false,true);
 	pangolin::Var<bool> settings_showActiveConstraints("ui.ActiveConst",true,true);
 	pangolin::Var<bool> settings_showAllConstraints("ui.AllConst",false,true);
+	pangolin::Var<bool> settings_showPreCalcTrajectory("ui.PreCalcTrajectory", false, true);
 
 
 	pangolin::Var<bool> settings_show3D("ui.show3D",true,true);
@@ -309,6 +310,7 @@ void PangolinDSOViewer::run()
 	    this->settings_showKFCameras = settings_showKFCameras.Get();
 	    this->settings_showTrajectory = settings_showTrajectory.Get();
 	    this->settings_showFullTrajectory = settings_showFullTrajectory.Get();
+		this->settings_showPreCalcTrajectory = settings_showPreCalcTrajectory.Get();
 
 		setting_render_display3D = settings_show3D.Get();
 		setting_render_displayDepth = settings_showLiveDepth.Get();
@@ -377,7 +379,9 @@ void PangolinDSOViewer::reset_internal()
 	model3DMutex.lock();
 	for(size_t i=0; i<keyframes.size();i++) delete keyframes[i];
 	keyframes.clear();
+	allFrameSE3.clear();
 	allFramePoses.clear();
+	allFramePreCalcPoses.clear();
 	keyframesByKFID.clear();
 	connections.clear();
 	model3DMutex.unlock();
@@ -473,6 +477,22 @@ void PangolinDSOViewer::drawConstraints()
 		}
 		glEnd();
 	}
+
+	if (settings_showPreCalcTrajectory)
+	{
+		float colorGreen[3] = {0,1,0};
+		glColor3f(colorGreen[0],colorGreen[1],colorGreen[2]);
+		glLineWidth(3);
+
+		glBegin(GL_LINE_STRIP);
+		for(unsigned int i=0;i<allFramePreCalcPoses.size();i++)
+		{
+			glVertex3f((float)allFramePreCalcPoses[i][0],
+					(float)allFramePreCalcPoses[i][1],
+					(float)allFramePreCalcPoses[i][2]);
+		}
+		glEnd();
+	}
 }
 
 
@@ -545,7 +565,7 @@ void PangolinDSOViewer::publishKeyframes(
 
 
 void PangolinDSOViewer::publishCamPose(FrameShell* frame,
-		CalibHessian* HCalib)
+		CalibHessian* HCalib, bool pre_calc_pose)
 {
     if(!setting_render_display3D) return;
     if(disableAllDisplay) return;
@@ -560,7 +580,19 @@ void PangolinDSOViewer::publishCamPose(FrameShell* frame,
 	if(!setting_render_display3D) return;
 
 	currentCam->setFromF(frame, HCalib);
-	allFramePoses.push_back(frame->camToWorld.translation().cast<float>());
+	if (!pre_calc_pose)
+	{
+		std::cout << "id_est: " << frame->incoming_id << std::endl;
+		allFramePoses.push_back(frame->camToWorld.translation().cast<float>());
+		allFrameSE3.push_back(frame->camToWorld);
+	}
+	else
+	{
+		const SE3 anchor_SE3 = (allFrameSE3.empty())? SE3() : allFrameSE3.front();
+		const SE3 Gsk = frame->camToWorld; //anchor_SE3.inverse() * frame->camToWorld;
+		std::cout << "id_pre: " << frame->incoming_id << std::endl;
+		allFramePreCalcPoses.push_back(Gsk.translation().cast<float>());
+	}
 }
 
 

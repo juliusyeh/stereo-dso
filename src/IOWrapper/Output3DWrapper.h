@@ -158,7 +158,7 @@ public:
          * Calling:
          * Always called, no overhead if not used.
          */
-        virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib) {}
+        virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib, bool pre_calc_pose=false) {}
 
 
 

@@ -52,7 +52,8 @@ public:
 			FrameHessian* newFrameHessian,
 			SE3 &lastToNew_out, AffLight &aff_g2l_out,
 			int coarsestLvl, Vec5 minResForAbort,
-			IOWrap::Output3DWrapper* wrap=0);
+			IOWrap::Output3DWrapper* wrap=0,
+			bool fix_traj = false);
 
 	void setCTRefForFirstFrame(
 			std::vector<FrameHessian*> frameHessians);

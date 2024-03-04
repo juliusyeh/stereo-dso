@@ -59,6 +59,9 @@ std::string vignette = "";
 std::string gammaCalib = "";
 std::string source = "";
 std::string calib = "";
+std::string traj = "";
+bool use_pre_calc_traj = false;
+bool fix_traj = false;
 double rescale = 1;
 bool reverse = false;
 bool disableROS = false;
@@ -280,6 +283,33 @@ void parseArgument(char* arg)
 		return;
 	}
 
+	if(1==sscanf(arg,"traj=%s",buf))
+	{
+		traj = buf;
+		printf("loading trajectory from %s!\n", traj.c_str());
+		return;
+	}
+
+	if(1==sscanf(arg,"use_pre_calc_traj=%d",buf))
+	{
+		if (option==1)
+		{
+			use_pre_calc_traj = true;
+			printf("Use pre-calc trajectory\n");
+		}
+		return;
+	}
+
+	if(1==sscanf(arg,"fix_traj=%d",buf))
+	{
+		if (option==1)
+		{
+			fix_traj = true;
+			printf("Set trajectory fix\n");
+		}
+		return;
+	}
+
 	if(1==sscanf(arg,"vignette=%s",buf))
 	{
 		vignette = buf;
@@ -370,12 +400,44 @@ int main( int argc, char** argv )
 		printf("ERROR: dont't have photometric calibation. Need to use commandline options mode=1 or mode=2 ");
 		exit(1);
 	}
+
+	// Load trajectory
+	std::map<int, SE3> id_to_SE3;
+	if (traj.size() > 0)
+	{
+		std::ifstream f(traj.c_str());
+		if (!f.good())
+		{
+			f.close();
+			printf("Didn't found trajectory file\n");
+			f.close();
+		}
+		else
+		{
+			printf(" traj found!\n");
+			std::string l1;
+			while(std::getline(f,l1))
+			{
+				double ic[9];
+
+				if(std::sscanf(l1.c_str(), "%lf %lf %lf %lf %lf %lf %lf %lf %lf",
+						&ic[0], &ic[1], &ic[2], &ic[3],
+						&ic[4], &ic[5], &ic[6], &ic[7], &ic[8]) == 9)
+				{
+					const int id = static_cast<int>(ic[0]);
+					Eigen::Vector3d t(ic[2], ic[3], ic[4]);
+					Eigen::Quaterniond q(ic[8], ic[5], ic[6], ic[7]);
+					id_to_SE3.insert({id, SE3(q.normalized(), t)});
+				}
+			}
+		}
+	}
 	
 	int lstart=start;
 	int lend = end;
 	
 	// build system
-	FullSystem* fullSystem = new FullSystem();
+	FullSystem* fullSystem = new FullSystem(id_to_SE3, use_pre_calc_traj, fix_traj);
 	fullSystem->setGammaFunction(reader->getPhotometricGamma());
 	fullSystem->linearizeOperation = (playbackSpeed==0);
 	
@@ -456,6 +518,11 @@ int main( int argc, char** argv )
 
         for(int ii=0; ii<(int)idsToPlay.size(); ii++)
         {
+			// if (ii % 4 != 0)
+			// {
+			// 	continue;
+			// }
+
             if(!fullSystem->initialized)	// if not initialized: reset start time.
             {
                 gettimeofday(&tv_start, NULL);
@@ -499,7 +566,9 @@ int main( int argc, char** argv )
 
             if(MODE_SLAM)
             {
+				std::cout << "Adding active frame " << i << std::endl;
                 if(!skipFrame) fullSystem->addActiveFrame(img_left, img_right, i);
+				std::cout << "Finish adding active frame " << i << std::endl;
             }
 
             if(MODE_STEREOMATCH)
@@ -530,7 +599,7 @@ int main( int argc, char** argv )
 
                     for(IOWrap::Output3DWrapper* ow : wraps) ow->reset();
 
-                    fullSystem = new FullSystem();
+                    fullSystem = new FullSystem(id_to_SE3, use_pre_calc_traj, fix_traj);
                     fullSystem->setGammaFunction(reader->getPhotometricGamma());
                     fullSystem->linearizeOperation = (playbackSpeed==0);
 
@@ -556,7 +625,7 @@ int main( int argc, char** argv )
         gettimeofday(&tv_end, NULL);
 
 
-        fullSystem->printResult("/home/jiatianwu/project/sdso/result.txt");
+        fullSystem->printResult("result.txt");
 
 
         int numFramesProcessed = abs(idsToPlay[0]-idsToPlay.back());
