@@ -52,13 +52,19 @@ namespace dso
 void FullSystem::linearizeAll_Reductor(bool fixLinearization, std::vector<PointFrameResidual*>* toRemove, int min, int max, Vec10* stats, int tid)
 {
 	// printf("Calculating per feature costs...\n");
+	std::ofstream myfile;
+	myfile.open("residuals.txt");
+	myfile << std::setprecision(15);
 
 	for(int k=min;k<max;k++)
 	{
 		PointFrameResidual* r = activeResiduals[k];
-		const double per_cost = r->linearize(&Hcalib, fix_traj);
+		const double per_cost = r->linearize(&Hcalib);
 		// printf("Per costs: %f\n", per_cost);
 		(*stats)[0] += per_cost;
+
+		myfile << per_cost << '\n';
+		// myfile << r->host->shell->incoming_id << ", " << r->target->shell->incoming_id << ", " << per_cost << '\n';
 
 		if(fixLinearization)
 		{
@@ -86,6 +92,8 @@ void FullSystem::linearizeAll_Reductor(bool fixLinearization, std::vector<PointF
 			}
 		}
 	}
+
+	myfile.close();
 }
 
 
