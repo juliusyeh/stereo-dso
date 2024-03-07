@@ -30,6 +30,8 @@ set(CMAKE_CXX_FLAGS
    "${SSE_FLAGS} -O3 -fPIC -g -std=c++0x -march=native"
 #   "${SSE_FLAGS} -O3 -g -std=c++0x -fno-omit-frame-pointer"
 )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a")
+set(CMAKE_CXX_COMPILER "/usr/bin/aarch64-linux-gnu-g++")
 
 # Sources files
 set(dso_SOURCE_FILES
@@ -58,12 +60,13 @@ set(dso_SOURCE_FILES
 include_directories(
   ${PROJECT_SOURCE_DIR}/src
   ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
+  ${PROJECT_SOURCE_DIR}/thirdparty/sse2neon
   ${EIGEN3_INCLUDE_DIR}
 ) 
 
 
 # decide if we have pangolin
-if (Pangolin_FOUND)
+if (0)
 	message("--- found PANGOLIN, compiling dso_pangolin library.")
 	include_directories( ${Pangolin_INCLUDE_DIRS} ) 
 	set(dso_pangolin_SOURCE_FILES 
@@ -95,7 +98,7 @@ else ()
 endif ()
 
 # decide if we have ziplib.
-if (LIBZIP_LIBRARY)
+if (0)
 	message("--- found ziplib (${LIBZIP_VERSION}), compiling with zip capability.")
 	add_definitions(-DHAS_ZIPLIB=1)
 	include_directories( ${LIBZIP_INCLUDE_DIR_ZIP} ${LIBZIP_INCLUDE_DIR_ZIPCONF} ) 
@@ -113,7 +116,7 @@ add_library(dso ${dso_SOURCE_FILES} ${dso_opencv_SOURCE_FILES} ${dso_pangolin_SO
 
 
 # build main executable (only if we have both OpenCV and Pangolin)
-if (OpenCV_FOUND AND Pangolin_FOUND)
+if (0 AND 0)
 	message("--- compiling dso_dataset.")
 	add_executable(dso_dataset ${PROJECT_SOURCE_DIR}/src/main_dso_pangolin.cpp )
     target_link_libraries(dso_dataset dso boost_system boost_thread cxsparse ${LIBZIP_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBS})
